@@ -14,14 +14,12 @@ const seeds = seedsRaw.reduce((acc, s, i) => {
     return [...acc, { start: s, end: s + total - 1 }]
 }, [])
 
-// console.log(seedsRaw, seeds)
-
 /**
- * @typedef {{ destinationStart: number, sourceStart: number, range: number }} Range
- * @typedef {{ from: string, to: string, ranges: Range[] }} SeedMap
+ * @typedef {{ start: number, end: number }} Range
+ * @typedef {{ from: string, to: string, ranges: { source: Range, dest: Range }[] }} RangeMap
  * */
 
-/** @type {(mapStr: str) => SeedMap} */
+/** @type {(mapStr: str) => RangeMap} */
 const processMap = mapStr => {
     const [definition, ...ranges] = mapStr.split('\n').filter(l => l.length)
 
@@ -31,60 +29,75 @@ const processMap = mapStr => {
         to,
         ranges: ranges.map(r => {
             const [destinationStart, sourceStart, range] = r.split(' ').map(n => parseInt(n))
-            return { destinationStart, sourceStart, range}
+            return { source: { start: sourceStart, end: (sourceStart - 1) + range }, dest: { start: destinationStart, end: (destinationStart - 1) + range } }
         })
     }
 }
 const maps = rest.join('\n').split('\n\n').map(processMap)
 
-const starting = 'seed'
-
-/** @type {(sourceNum: number, map: SeedMap) => number} */
-const getDestination = (sourceNum, map) => {
-    const ranges = map.ranges.filter(range => range.sourceStart <= sourceNum && (range.sourceStart + range.range) >= sourceNum)
-    if (ranges.length === 0) return sourceNum
-
-    const range = ranges.reduce((acc, range) => acc.destinationStart < range.destinationStart ? acc : range, ranges[0])
-    return range.destinationStart + (sourceNum - range.sourceStart)
-}
-
-/** @type {{ [from: string]: SeedMap }} */
+/** @type {{ [from: string]: RangeMap }} */
 const mapOMaps = maps.reduce((acc, map) => ({ ...acc, [map.from]: map}), {})
-// let from = starting
-// let sourceNum = seeds[0]
 
 /**
- * @type {{ start: number, end: number }[]}
+ * @type {(range: Range, rangeMap: RangeMap) => RangeMap['ranges']}
  */
-let sourceNums = [...seeds]
+const getOverlappingRanges = (range, rangeMap) => rangeMap.ranges.filter(({ source }) => !(source.end < range.start || source.start > range.end))
 
-let min = Number.NaN
 
-for (let index = 0; index < sourceNums.length; index++) {
-    const sourceRange = sourceNums[index]
-    console.log(sourceRange.end - sourceRange.start)
-    let localMin = Number.NaN
-    for (let i = sourceRange.start; i <= sourceRange.end; i++) {
-        let from = starting
-        let sourceNum = i
-        while (mapOMaps[from] !== undefined) {
-            const toMap = mapOMaps[from]
-            const to = toMap.to
-
-            from = to
-
-            const destNum = getDestination(sourceNum, toMap)
-            sourceNum = destNum
-            // sourceNum = toNum
+/** @type {(ogRange: Range, overlappingRanges: RangeMap['ranges']) => RangeMap['ranges']} */
+const getRangeBreakdown = (ogRange, overlappingRanges) => {
+    const sortedRanges = overlappingRanges.slice(0).sort(({ source: { start: a }}, { source: { start: b }}) => a - b)
+    let nextUnhandledRange = ogRange.start
+    /** @type {RangeMap['ranges']} */
+    const rangeBreakdown = []
+    for (const { source, dest } of sortedRanges) {
+        const startAt = source.start < nextUnhandledRange ? nextUnhandledRange : source.start
+        const endAt = ogRange.end < source.end ? ogRange.end : source.end
+        if (startAt > nextUnhandledRange) {
+            rangeBreakdown.push({ source: { start: nextUnhandledRange, end: startAt - 1 }, dest: { start: nextUnhandledRange, end: startAt - 1 } })
         }
-        if (Number.isNaN(localMin) || localMin > sourceNum) localMin = sourceNum
+
+        rangeBreakdown.push({
+            source: { start: startAt, end: endAt },
+            dest: {
+                start: dest.start + (startAt > source.start ? Math.abs(source.start - startAt) : 0),
+                end: dest.end - (endAt < source.end ? Math.abs(source.end - endAt) : 0),
+            },
+        })
+
+        nextUnhandledRange = endAt + 1
 
     }
-    if (Number.isNaN(min) || localMin < min) min = localMin
-    console.log(`${index + 1}/${sourceNums.length}`)
+    if (nextUnhandledRange < ogRange.end) {
+        rangeBreakdown.push({
+            source: { start: nextUnhandledRange, end: ogRange.end },
+            dest: { start: nextUnhandledRange, end: ogRange.end },
+            isAddIn: true
+        })
+    }
+    return rangeBreakdown
+
 }
 
-console.log(min)
-// console.log(sourceNums.reduce((min, next) => Number.isNaN(min) ? next : Math.min(min, next), Number.NaN))
 
+/**
+ * @type {{ from: string, range: Range }[]}
+ */
+const queue = seeds.map(r => ({ from: 'seed', range: r }))
 
+/** @type {number[]} */
+const results = []
+
+for (let i = 0; i < queue.length; i++) {
+    const { from, range } = queue[i]
+    const rangeMap = mapOMaps[from]
+    if (rangeMap == undefined) {
+        results.push(range.start)
+        continue
+    }
+    const overlappingRanges = getOverlappingRanges(range, rangeMap)
+    const rangeBreakdowns = getRangeBreakdown(range, overlappingRanges)
+    queue.push(...rangeBreakdowns.map(({ dest }) => ({ from: rangeMap.to, range: dest })))
+}
+
+console.log(results.reduce((acc, n) => Number.isNaN(acc) ? n : Math.min(acc, n), Number.NaN))
