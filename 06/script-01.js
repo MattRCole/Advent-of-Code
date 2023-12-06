@@ -22,5 +22,3 @@ const getTotalDistanceBreakdown = ({ time, distance }) => {
     return winningDistances
 }
 console.log(timesAndDistances.map(td => getTotalDistanceBreakdown(td)).reduce((acc, { length }) => acc * length, 1))
-
-
