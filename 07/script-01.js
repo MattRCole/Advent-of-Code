@@ -4,6 +4,7 @@ const file = fs.readFileSync("./07/input.txt", { encoding: "utf-8" })
 
 const cards = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
 const rankOrder = ['fiveOfAKind', 'fourOfAKind', 'fullHouse', 'threeOfAKind', 'twoPair', 'onePair', 'highCard']
+
 /** @type {{ [rank: string]: Hand[]}} */
 const results = {
     fiveOfAKind: [],
@@ -89,6 +90,3 @@ const finalOrder = rankOrder.map(rank => {
 
 
 console.log([...finalOrder].reverse().reduce((acc, hand, index) => acc + ((index + 1) * hand.bid), 0))
-
-// answer
-// 247815719
