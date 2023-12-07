@@ -17,25 +17,24 @@ const results = {
 
 const lines = file.split('\n').filter(({ length }) => length)
 
-/** @typedef {{ cards: string[], bid: number, meaningfulCards?: string[], originalOrder: string[] }} Hand */
+/** @typedef {{ cards: string[], bid: number }} Hand */
 
 /** @type {Hand[]} */
 const hands = lines.map(l => {
     const [handStr, bidStr] = l.split(' ')
     return {
-        cards: handStr.split('').sort((a, b) => cards.indexOf(a) - cards.indexOf(b)),
+        cards: handStr.split(''),
         bid: parseInt(bidStr),
-        originalOrder: handStr.split(''),
     }
 })
 
 /** @type {(hand: Hand) => string[]} */
 const getHandType = hand => {
     let run = 0
-    let result = []
-    let resultCards = []
+    let runs = []
     let lastCard = undefined
-    for (const card of hand.cards) {
+    const sortedCards = [...hand.cards].sort((a, b) => cards.indexOf(a) - cards.indexOf(b))
+    for (const card of sortedCards) {
         if (lastCard === undefined) {
             lastCard = card
             run++
@@ -45,56 +44,37 @@ const getHandType = hand => {
             run++
             continue
         }
-        resultCards.push(lastCard)
         lastCard = card
-        result.push(run)
+        runs.push(run)
         run = 1
     }
-    if (lastCard === hand.cards[hand.cards.length - 1]) {
-        resultCards.push(lastCard)
-        result.push(run)
-    }
+    if (lastCard === sortedCards[sortedCards.length - 1]) { runs.push(run) }
 
-    if (result[0] === 5) return ['fiveOfAKind', resultCards[0]]
+    if (runs[0] === 5) return 'fiveOfAKind'
 
-    if (result.includes(4)) return ['fourOfAKind', resultCards[result.indexOf(4)]]
+    if (runs.includes(4)) return 'fourOfAKind'
 
-    if (result.includes(3) && result.includes(2)) return ['fullHouse', resultCards[result.indexOf(3)], resultCards[result.indexOf(2)]]
+    if (runs.includes(3) && runs.includes(2)) return 'fullHouse'
 
-    if (result.includes(3)) return ['threeOfAKind', resultCards[result.indexOf(3)]]
+    if (runs.includes(3)) return 'threeOfAKind'
 
-    if (result.includes(2) && result.slice(result.indexOf(2) + 1).includes(2)) {
-        const pairCards = resultCards.filter((_, index) => result[index] === 2).sort((a, b) => cards.indexOf(a) - cards.indexOf(b))
-        return ['twoPair', ...pairCards]
-    }
+    if (runs.includes(2) && runs.slice(runs.indexOf(2) + 1).includes(2)) return 'twoPair'
 
-    if (result.includes(2)) return ['onePair', resultCards[result.indexOf(2)]]
+    if (runs.includes(2)) return 'onePair'
 
-    return ['highCard', hand.cards[0]]
+    return 'highCard'
 }
 
-const sortHand = 
-
 hands.forEach(hand => {
-    const [type, ...meaningfulCards] = getHandType(hand)
-    // console.log(type)
-    results[type].push({ ...hand, meaningfulCards })
+    const type = getHandType(hand)
+    results[type].push(hand)
 })
-// console.log(hands.map(hand => ({ ...hand, type: getHandType(hand) })))
-// console.log(results)
 
 /** @type {(a: Hand, b: Hand) => number} */
 const sortByHandInRank = (a, b) => {
-    // for (let i = 0; i < a.meaningfulCards.length; i++) {
-    //     const aIndex = cards.indexOf(a.meaningfulCards[i])
-    //     const bIndex = cards.indexOf(b.meaningfulCards[i])
-    //     if (aIndex - bIndex === 0) continue
-
-    //     return aIndex - bIndex
-    // }
-    for (let i = 0; i < a.originalOrder.length; i++) {
-        const aIndex = cards.indexOf(a.originalOrder[i])
-        const bIndex = cards.indexOf(b.originalOrder[i])
+    for (let i = 0; i < a.cards.length; i++) {
+        const aIndex = cards.indexOf(a.cards[i])
+        const bIndex = cards.indexOf(b.cards[i])
         if (aIndex - bIndex === 0) continue
 
         return aIndex - bIndex
@@ -103,18 +83,12 @@ const sortByHandInRank = (a, b) => {
 }
 
 const finalOrder = rankOrder.map(rank => {
-    if (rank === 'highCard') {
-        console.log('')
-    }
     const localResult = [...results[rank]].sort(sortByHandInRank)
     return localResult
 }).reduce((acc, hands) => [...acc, ...hands], [])
 
-fs.writeFileSync('./out.txt', JSON.stringify({ finalOrder, results }, null, 2))
 
 console.log([...finalOrder].reverse().reduce((acc, hand, index) => acc + ((index + 1) * hand.bid), 0))
 
-
-// answers
-// 248445994
-// 248414749
+// answer
+// 247815719
