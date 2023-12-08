@@ -21,16 +21,8 @@ const nodes = nodeStrS.map(n => {
 /** @type {{ [node: string]: { L: string, R: string }}} */
 const nodeMap = nodes.reduce((acc, node) => ({...acc, [node.name]: { L: node.L, R: node.R }}), {})
 
-// let currentNode = 'AAA'
 let currentNodes = nodes.filter(({ name }) => name[name.length - 1] === 'A').map(({ name }) => name)
-// let steps = 0
 
-const allAreEndingNodes = () => {
-    for (const node of currentNodes) {
-        if (node[node.length - 1] !== 'Z') return false
-    }
-    return true
-}
 
 const cycleStepCounts = []
 
@@ -70,24 +62,15 @@ const lcm = (...nums) => {
 }
 
 for (let i = 0; i < currentNodes.length; i++) {
-    const originalNode = currentNodes[i]
     let currentNode = currentNodes[i]
-    let endingNode = undefined
-    let firstEnding = 0
-    let forceContinue = false
     let step = 0
     do {
-        forceContinue = false
         const instruction = directions[step % directions.length]
         currentNode = nodeMap[currentNode][instruction]
         step++
-        if (currentNode[currentNode.length - 1] === 'Z' && endingNode === undefined) {
-            endingNode = currentNode
-            firstEnding = step
-            forceContinue = true
-        }
-    } while (currentNode !== endingNode || forceContinue)
-    cycleStepCounts.push(firstEnding)
+    } while (currentNode.slice(-1) !== 'Z')
+    // This only works because the input cycles after the first ending node.
+    cycleStepCounts.push(step)
 }
 
 const answer = lcm(...cycleStepCounts)
