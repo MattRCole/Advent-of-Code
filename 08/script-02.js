@@ -12,19 +12,10 @@ const directions = directionStr.split('')
 const nodes = nodeStrS.map(n => {
     const [name, directionStr] = n.split(' = ')
     const [L, R] = directionStr.split(', ').map(dir => dir.replace(/[()]/g, ''))
-    return {
-        name,
-        L,
-        R
-    }
+    return { name, L, R }
 })
 /** @type {{ [node: string]: { L: string, R: string }}} */
 const nodeMap = nodes.reduce((acc, node) => ({...acc, [node.name]: { L: node.L, R: node.R }}), {})
-
-let currentNodes = nodes.filter(({ name }) => name[name.length - 1] === 'A').map(({ name }) => name)
-
-
-const cycleStepCounts = []
 
 const isPrime = (candidate, ...primes) => {
     for (const prime of primes) {
@@ -32,6 +23,7 @@ const isPrime = (candidate, ...primes) => {
     }
     return true
 }
+
 const nextBiggestPrime = (...primes) => {
     if (primes.length === 0) return 2
 
@@ -53,13 +45,17 @@ const lcm = (...nums) => {
                 primeWasUsed = true
                 return n / nextPrime
             }
-
             return n
         })
         if (primeWasUsed)  usedPrimes.push(nextPrime)
     }
     return [...usedPrimes, ...factoredNums].reduce((acc, n) => acc * n, 1)
 }
+
+
+let currentNodes = nodes.filter(({ name }) => name[name.length - 1] === 'A').map(({ name }) => name)
+
+const stepsToGetToTheEnd = []
 
 for (let i = 0; i < currentNodes.length; i++) {
     let currentNode = currentNodes[i]
@@ -69,9 +65,9 @@ for (let i = 0; i < currentNodes.length; i++) {
         currentNode = nodeMap[currentNode][instruction]
         step++
     } while (currentNode.slice(-1) !== 'Z')
-    // This only works because the input cycles after the first ending node.
-    cycleStepCounts.push(step)
+    // This only works because the directions cycle after the first ending node.
+    stepsToGetToTheEnd.push(step)
 }
 
-const answer = lcm(...cycleStepCounts)
+const answer = lcm(...stepsToGetToTheEnd)
 console.log(answer)
