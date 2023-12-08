@@ -92,12 +92,3 @@ for (let i = 0; i < currentNodes.length; i++) {
 
 const answer = lcm(...cycleStepCounts)
 console.log(answer)
-
-// while (!allAreEndingNodes()) {
-//     const instruction = directions[steps % directions.length]
-//     currentNodes = currentNodes.map(node => nodeMap[node][instruction])
-//     steps++
-//     if (steps % 10000 === 0) console.log(steps)
-// }
-
-// console.log(steps)
