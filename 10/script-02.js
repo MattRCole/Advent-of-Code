@@ -2,6 +2,8 @@ const fs = require("node:fs")
 
 const file = fs.readFileSync("./10/input.txt", { encoding: "utf-8" })
 
+// ------------- Helper Objects ------------
+
 /** @typedef {{ row: number, column: number }} Coords */
 
 /** @type {string[][]} */
@@ -12,12 +14,15 @@ const sCoords = rawMap.reduce((acc, line, row) => {
     if (column !== -1) return { row, column }
     return undefined
 }, undefined)
+
 const Compass = {
     North: 'North',
     South: 'South',
     East: 'East',
     West: 'West'
 }
+
+/** @typedef {keyof typeof Compass} Direction */
 
 const Opposite = {
     North: 'South',
@@ -32,7 +37,14 @@ const compass = [
     Compass.South,
     Compass.West
 ]
-/** @typedef {keyof typeof Compass} Direction */
+
+const Turn = {
+    Left: 'Left',
+    Right: 'Right',
+}
+
+/** @type {keyof typeof Turn} TTurn */
+
 
 /** @type {{ [connector: string]: Direction[] }} */
 const connectorMap = {
@@ -44,6 +56,24 @@ const connectorMap = {
     'F': [Compass.South, Compass.East],
     '.': []
 }
+
+/** @type {{ [D in keyof typeof Compass]: string[] }} */
+const connectsTo = Object.keys(connectorMap).reduce((acc, k) => {
+    if (connectorMap[k].length === 0) return acc
+    const toAdd = {}
+    for (const compass of connectorMap[k]) {
+        acc[compass] = acc[compass] ? [...acc[compass], k] : [k]
+    }
+    return acc
+}, {})
+
+/*
+connectsTo = {
+    [Compass.North]: ['|', 'L', 'J'],
+    [Compass.East]: ['-', 'L', 'F'],
+    ... etc
+}
+*/
 
 const fancyMap = {
     '|': '║',
@@ -93,16 +123,6 @@ const getDirection = (from, towards) => {
     throw new Error(`Trying to check diagonal direction! from: ${JSON.stringify(from)}, towards: ${JSON.stringify(towards)}`)
 }
 
-/** @type {{ [D in keyof typeof Compass]: string[] }} */
-const connectsTo = Object.keys(connectorMap).reduce((acc, k) => {
-    if (connectorMap[k].length === 0) return acc
-    const toAdd = {}
-    for (const compass of connectorMap[k]) {
-        acc[compass] = acc[compass] ? [...acc[compass], k] : [k]
-    }
-    return acc
-}, {})
-
 const determineSPipeType = (coords, map) => {
     const connectionDirections = reduceNeighbors((acc, pipeSection, pipeCoords) => {
         const toS = getDirection(pipeCoords, coords)
@@ -138,13 +158,6 @@ const moveDirection = ({ row, column}, direction, map = rawMap) => {
 }
 
 const sPipeType = determineSPipeType(sCoords, rawMap)
-
-const Turn = {
-    Left: 'Left',
-    Right: 'Right',
-}
-
-/** @type {keyof typeof Turn} TTurn */
 
 // Make sure there's actually a turn before calling
 /** @type {(from: Direction, to: Direction) => } */
@@ -209,7 +222,7 @@ const isPathCoord = ({ row, column }, sPath = sparsePath) => {
     return sPath[row] ? sPath[row][column] || false : false
 }
 
-const checkMap = new Array(rawMap.length).fill(undefined).map(_ => new Array(rawMap[0].length).fill(0))
+const debugInefficienciesMap = new Array(rawMap.length).fill(undefined).map(_ => new Array(rawMap[0].length).fill(0))
 
 let sparseGround = {}
 for (const { coords, directions } of path) {
@@ -221,7 +234,7 @@ for (const { coords, directions } of path) {
             const segment = rawMap[checkCoords.row][checkCoords.column]
             const prev = checkCoords
             const { row, column } = prev
-            checkMap[row][column] += 1
+            debugInefficienciesMap[row][column] += 1
             checkCoords = moveDirection(checkCoords, directionOfTravel)
 
             // if (segment === '.') {
@@ -236,7 +249,7 @@ for (const { coords, directions } of path) {
 }
 const severity = [' ', '░','░','░','▒','▒','▓','█']
 console.log('--------------------------------')
-console.log(checkMap.map(r => r.map(c => severity[c]).join('')).join('\n'))
+console.log(debugInefficienciesMap.map(r => r.map(c => severity[c]).join('')).join('\n'))
 console.log('--------------------------------')
 console.log(JSON.stringify(sparseGround))
 console.log('\n\n\n---simplified path---\n\n\n')
@@ -254,5 +267,15 @@ console.log(
     }).join('')).join('\n')
 )
 
+console.log('\n\n\n-----fancier map-----\n\n\n')
+
+console.log(
+    rawMap.map((r, row) => r.map((char, column) => {
+        if (isPathCoord({ row, column })) return fancyMap[char] || char
+        if (sparseGround[row] && sparseGround[row][column]) return severity[debugInefficienciesMap[row][column]]
+
+        return ' '
+    }).join('')).join('\n')
+)
 console.log(Object.keys(sparseGround).reduce((acc, k) => acc + Object.keys(sparseGround[k]).length, 0))
 
