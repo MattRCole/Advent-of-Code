@@ -43,7 +43,7 @@ const Turn = {
     Right: 'Right',
 }
 
-/** @type {keyof typeof Turn} TTurn */
+/** @typedef {keyof typeof Turn} TTurn */
 
 
 /** @type {{ [connector: string]: Direction[] }} */
@@ -85,6 +85,10 @@ const fancyMap = {
     'S': '╳'
 }
 
+
+const debugInefficiencySeverity = [' ', '░','░','░','▒','▒','▓','█']
+
+// ----------------- Helper Functions -----------------
 /**
  * @template T
  * @template R
@@ -112,7 +116,9 @@ function reduceNeighbors(callback, { row, column }, map, initialValue) {
 
 /** @type {(from: Coords, towards: Coords) => keyof typeof Compass} */
 const getDirection = (from, towards) => {
-    if (from.row === towards.row && from.column === towards.column) throw new Error(`Trying to determine direction of same coordinates: ${JSON.stringify(from)}`)
+    if (from.row === towards.row && from.column === towards.column)
+        throw new Error(`Trying to determine direction of same coordinates: ${JSON.stringify(from)}`)
+
     if (from.column === towards.column) {
         return from.row - towards.row < 0 ? Compass.South : Compass.North
     }
@@ -121,6 +127,34 @@ const getDirection = (from, towards) => {
     }
 
     throw new Error(`Trying to check diagonal direction! from: ${JSON.stringify(from)}, towards: ${JSON.stringify(towards)}`)
+}
+
+const areSameCoordinates = (a, b) => a.row === b.row && a.column === b.column
+
+// Warning, this might not move you
+/** @type {(coord: Coords, direction: keyof typeof Compass) => Coords} */
+const moveDirection = ({ row, column}, direction, map = rawMap) => {
+    const newCoords = {
+        [Compass.North]: { row: Math.max(0, row - 1), column },
+        [Compass.East]: { row, column: Math.min(map[row].length - 1, column + 1) },
+        [Compass.South]: { row: Math.min(map.length - 1, row + 1), column },
+        [Compass.West]: { row, column: Math.max(0, column - 1) }
+
+    }
+
+    return newCoords[direction]
+}
+
+// Make sure there's actually a turn before calling
+/** @type {(from: Direction, to: Direction) => } */
+const getTurnType = (from, to) => {
+    const nextFrom = (compass.indexOf(from) + 1) % compass.length
+    const prevFrom = (compass.indexOf(from) + (compass.length - 1)) % compass.length
+    const toIndex = compass.indexOf(to)
+    if (nextFrom === toIndex) return Turn.Right
+    if (prevFrom === toIndex) return Turn.Left
+
+    throw new Error(`Cannot turn around (at least I think that's what happened)! from: ${from}, to: ${to}, result: ${{ nextFrom, prevFrom }}`)
 }
 
 const determineSPipeType = (coords, map) => {
@@ -141,35 +175,9 @@ const determineSPipeType = (coords, map) => {
     throw new Error(`Could not determine pipe type for directions ${JSON.stringify(connectionDirections)}`)
 }
 
-const areSameCoordinates = (a, b) => a.row === b.row && a.column === b.column
-
-// Warning, this might not move you
-/** @type {(coord: Coords, direction: keyof typeof Compass) => Coords} */
-const moveDirection = ({ row, column}, direction, map = rawMap) => {
-    const newCoords = {
-        [Compass.North]: { row: Math.max(0, row - 1), column },
-        [Compass.East]: { row, column: Math.min(map[row].length - 1, column + 1) },
-        [Compass.South]: { row: Math.min(map.length - 1, row + 1), column },
-        [Compass.West]: { row, column: Math.max(0, column - 1) }
-
-    }
-
-    return newCoords[direction]
-}
+// ----------- begin problem solution: Determine what "inside" means, map path ---------------------
 
 const sPipeType = determineSPipeType(sCoords, rawMap)
-
-// Make sure there's actually a turn before calling
-/** @type {(from: Direction, to: Direction) => } */
-const getTurnType = (from, to) => {
-    const nextFrom = (compass.indexOf(from) + 1) % compass.length
-    const prevFrom = (compass.indexOf(from) + (compass.length - 1)) % compass.length
-    const toIndex = compass.indexOf(to)
-    if (nextFrom === toIndex) return Turn.Right
-    if (prevFrom === toIndex) return Turn.Left
-
-    throw new Error(`Cannot turn around (at least I think that's what happened)! from: ${from}, to: ${to}, result: ${{ nextFrom, prevFrom }}`)
-}
 
 const sPipeDirections = connectorMap[sPipeType]
 let direction = sPipeDirections[0]
@@ -177,7 +185,7 @@ let direction = sPipeDirections[0]
 let currentCoords = { ...sCoords }
 /** @type {({ coords: Coords, direction: Direction })[]} */
 const path = [{ coords: sCoords, directions: Opposite[sPipeDirections[1]] === direction ? [direction] : [direction, Opposite[sPipeDirections[1]]] }]
-/** @type  */
+
 const turns = {
     [Turn.Left]: 0,
     [Turn.Right]: 0,
@@ -212,11 +220,12 @@ const sparsePath = path.reduce((acc, { coords }) => ({
 }), {})
 
 
-// process.exit(0)
+// -------------- Figure out what spaces are "inside" -----------------
 
 const checkRotation = turns.Left > turns.Right ? Turn.Left : Turn.Right
 
-const turnDirection = (from, turnDir) => compass[(compass.indexOf(from) + (turnDir === Turn.Left ? compass.length - 1 : 1)) % compass.length]
+/** @type {(from: Direction, rotationDir: TTurn) => Direction} */
+const doRotateDirection = (from, rotationDir) => compass[(compass.indexOf(from) + (rotationDir === Turn.Left ? compass.length - 1 : 1)) % compass.length]
 
 const isPathCoord = ({ row, column }, sPath = sparsePath) => {
     return sPath[row] ? sPath[row][column] || false : false
@@ -227,7 +236,7 @@ const debugInefficienciesMap = new Array(rawMap.length).fill(undefined).map(_ =>
 let sparseGround = {}
 for (const { coords, directions } of path) {
     for (const direction of directions) {
-        const directionOfTravel = turnDirection(direction, checkRotation)
+        const directionOfTravel = doRotateDirection(direction, checkRotation)
 
         let checkCoords = coords
         do {
@@ -247,9 +256,11 @@ for (const { coords, directions } of path) {
         } while (!isPathCoord(checkCoords))
     }
 }
-const severity = [' ', '░','░','░','▒','▒','▓','█']
+
+// ---------- logging fun ----------
+
 console.log('--------------------------------')
-console.log(debugInefficienciesMap.map(r => r.map(c => severity[c]).join('')).join('\n'))
+console.log(debugInefficienciesMap.map(r => r.map(c => debugInefficiencySeverity[c]).join('')).join('\n'))
 console.log('--------------------------------')
 console.log(JSON.stringify(sparseGround))
 console.log('\n\n\n---simplified path---\n\n\n')
@@ -272,10 +283,13 @@ console.log('\n\n\n-----fancier map-----\n\n\n')
 console.log(
     rawMap.map((r, row) => r.map((char, column) => {
         if (isPathCoord({ row, column })) return fancyMap[char] || char
-        if (sparseGround[row] && sparseGround[row][column]) return severity[debugInefficienciesMap[row][column]]
+        if (sparseGround[row] && sparseGround[row][column]) return debugInefficiencySeverity[debugInefficienciesMap[row][column]]
 
         return ' '
     }).join('')).join('\n')
 )
+
+// ---------------- result ------------
+
 console.log(Object.keys(sparseGround).reduce((acc, k) => acc + Object.keys(sparseGround[k]).length, 0))
 
