@@ -1,6 +1,5 @@
 const fs = require("node:fs")
 const lib = require('./lib')
-const arr = require('../util/array')
 
 const file = fs.readFileSync("./12/input.txt", { encoding: "utf-8" })
 
