@@ -29,7 +29,7 @@ const findAllGroupPermutation = (group, checkSums) => {
     let validEndingPoints = 0
 
 
-    for (const startingPointStr of Object.entries(startingPoints)) {
+    for (const startingPointStr of Object.keys(startingPoints)) {
       const startingPoint = parseInt(startingPointStr)
       const permutationModifier = startingPoints[startingPoint]
       if (startingPoint >= group.length) continue
@@ -97,11 +97,11 @@ const getCaseQueue = (permutationInfo, groups, checkSums, currentPermutations) =
 
 /** @type {(baseCase: Case) => number} */
 const solveBaseCase = baseCase => {
-  let queue = [baseCase]
+  let stack = [baseCase]
   // const caseResults = []
   let totalPermutations = 0
-  while (queue.length) {
-    const { groups, checkSums, permutations } = queue.pop()
+  while (stack.length) {
+    const { groups, checkSums, permutations } = stack.pop()
 
     const onlyEmptyGroups = groups.map(g => g.join('')).join('').includes('#') === false
     if (onlyEmptyGroups && checkSums.length === 0) {
@@ -118,7 +118,7 @@ const solveBaseCase = baseCase => {
 
     const newCases = getCaseQueue(permutationInfo, groups, checkSums, permutations)
 
-    queue = [...queue, ...newCases]
+    stack = [...stack, ...newCases]
   }
 
   // return arr.sum(caseResults)

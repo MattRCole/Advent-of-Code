@@ -4,64 +4,46 @@ const arr = require('../util/array')
 
 const file = fs.readFileSync("./12/input.txt", { encoding: "utf-8" })
 
-/** @typedef {{ checkSums: number[], groups: string[][], rawLine: string }} HotSpringLine */
+/** @typedef {import('./lib').Case} Case*/
 
-/** @type {HotSpringLine[]} */
-const newHotSpringsLines = file.split('\n').map(l => {
+/** @type {Case[]} */
+const part2BaseCases = file.split('\n').map(l => {
     const [rawLine, checkSumStr] = l.split(' ')
     const checkSums = new Array(5).fill(checkSumStr).join(',').split(',').map(n => parseInt(n))
     const groups = new Array(5).fill(rawLine).join('?').split('.').filter(({ length }) => length).map(l => l.split(''))
 
     return {
-        rawLine: l,
         checkSums,
-        groups: groups.filter(({ length }) => length > 0)
+        groups: groups.filter(({ length }) => length > 0),
+        permutations: 1,
     }
 })
-
-/** @type {HotSpringLine[]} */
-const oldHotSpringsLines = file.split('\n').map(l => {
-    const [rawLine, checkSumStr] = l.split(' ')
-    const checkSums = checkSumStr.split(',').map(n => parseInt(n))
-    const groups = [[]]
-    let currentGroup = 0
-    for (let i = 0; i < rawLine.length; i++) {
-        const char = rawLine[i]
-        if (char === '.' && (i === 0 || rawLine[i - 1] === '.')) continue
-
-        if (char === '.') {
-            currentGroup++
-            groups.push([])
-            continue
-        }
-
-        groups[currentGroup].push(char)
-    }
-
-    return {
-        rawLine,
-        checkSums,
-        groups: groups.filter(({ length }) => length > 0)
-    }
-})
-
-const hotSpringsLines = newHotSpringsLines
-
-/** @typedef {import('./lib').Case} Case*/
 
 /** @type {Case[]} */
-const lines = hotSpringsLines.map(({ groups, checkSums }) => ({ groups, checkSums, permutations: 1 }))
+const part1BaseCases = file.split('\n').map(l => {
+    const [rawLine, checkSumStr] = l.split(' ')
+    const checkSums = checkSumStr.split(',').map(n => parseInt(n))
+    const groups = rawLine.split('.').filter(({ length }) => length).map(l => l.split(''))
 
-const results = []
+    return {
+        checkSums,
+        groups: groups.filter(({ length }) => length > 0),
+        permutations: 1,
+    }
+})
 
-for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-  /** @type {Case[]} */
-  console.log(lineIndex + 1)
-  const line = lines[lineIndex]
+const baseCases = part2BaseCases
+
+let results = 0
+
+for (let baseCaseIndex = 0; baseCaseIndex < baseCases.length; baseCaseIndex++) {
+  console.log(baseCaseIndex + 1)
+
+  const baseCase = baseCases[baseCaseIndex]
   
   
-  const lineResults = lib.solveBaseCase(line)
-  results.push(lineResults)
+  const lineResults = lib.solveBaseCase(baseCase)
+  results += lineResults
 }
 
-console.log(arr.sum(results))
+console.log('result: ', results)

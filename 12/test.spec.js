@@ -185,7 +185,7 @@ describe("#getCaseQueue", () => {
 })
 
 describe("#solveBaseCase", () => {
-  it.each(testBaseCases.map((testBaseCase, i) => [testBaseCase, testAnswers[i]]))("Can solve base case $j with solution of $i", (baseCase, expected) => {
+  it.each(testBaseCases.map((testBaseCase, i) => [testBaseCase, testAnswers[i]]))("Can solve base case %j with solution of %i", (baseCase, expected) => {
     const result = solveBaseCase(baseCase)
     expect(result).toEqual(expected)
   })
