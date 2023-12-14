@@ -20,16 +20,18 @@ const findAllGroupPermutation = (group, checkSums) => {
   /** @type {number[][]} */
   const allValidEndingPoints = []
   /** @type {{ [key: number]: number }} */
-  const allPotentialEndingPoints = []
+  let potentialEndingPoints = { 0: 1 }
   for (let i = 0; i < checkSums.length; i++) {
     const checkSum = checkSums[i]
-    const startingPoints = i === 0 ? [0] : allPotentialEndingPoints[i - 1]
-    const potentialEndingPoints = []
+    const startingPoints = potentialEndingPoints
+    potentialEndingPoints = {}
 
-    const validEndingPoints = []
+    let validEndingPoints = 0
 
 
-    for (const startingPoint of startingPoints) {
+    for (const startingPointStr of Object.entries(startingPoints)) {
+      const startingPoint = parseInt(startingPointStr)
+      const permutationModifier = startingPoints[startingPoint]
       if (startingPoint >= group.length) continue
 
       let offset = -1
@@ -44,21 +46,20 @@ const findAllGroupPermutation = (group, checkSums) => {
 
         const endingPoint = startingPoint + offset + checkSum + 1
 
-        potentialEndingPoints.push(endingPoint)//  = (potentialEndingPoints[endingPoint] || 0) + permutationModifier
+        potentialEndingPoints[endingPoint] = (potentialEndingPoints[endingPoint] || 0) + permutationModifier
 
         if (group.slice(endingPoint).includes('#') === false) {
-          validEndingPoints.push(endingPoint)
+          validEndingPoints += permutationModifier
         }
       } while (startingPoint + offset < group.length && group[startingPoint + offset] !== '#')
 
     }
 
-    allPotentialEndingPoints.push(potentialEndingPoints)
     allValidEndingPoints.push(validEndingPoints)
   }
 
   const toReturn = allValidEndingPoints.map(
-    ({ length }, index) => ({ checkSumCount: index + 1, permutations: length })
+    (count, index) => ({ checkSumCount: index + 1, permutations: count })
   ).filter(({ permutations }) => permutations)
 
   if (group.includes('#') === false) {
@@ -97,6 +98,7 @@ const getCaseQueue = (permutationInfo, groups, checkSums, currentPermutations) =
 /** @type {(baseCase: Case) => number} */
 const solveBaseCase = baseCase => {
   let queue = [baseCase]
+  // const caseResults = []
   let totalPermutations = 0
   while (queue.length) {
     const { groups, checkSums, permutations } = queue.pop()
@@ -104,6 +106,7 @@ const solveBaseCase = baseCase => {
     const onlyEmptyGroups = groups.map(g => g.join('')).join('').includes('#') === false
     if (onlyEmptyGroups && checkSums.length === 0) {
       totalPermutations += permutations
+      // caseResults.push(permutations)
       continue
     }
 
@@ -118,6 +121,7 @@ const solveBaseCase = baseCase => {
     queue = [...queue, ...newCases]
   }
 
+  // return arr.sum(caseResults)
   return totalPermutations
 }
 

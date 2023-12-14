@@ -11,29 +11,16 @@ const newHotSpringsLines = file.split('\n').map(l => {
     const [rawLine, checkSumStr] = l.split(' ')
     const checkSums = new Array(5).fill(checkSumStr).join(',').split(',').map(n => parseInt(n))
     const groups = new Array(5).fill(rawLine).join('?').split('.').filter(({ length }) => length).map(l => l.split(''))
-    let currentGroup = 0
-    for (let i = 0; i < rawLine.length; i++) {
-        const char = rawLine[i]
-        if (char === '.' && (i === 0 || rawLine[i - 1] === '.')) continue
-
-        if (char === '.') {
-            currentGroup++
-            groups.push([])
-            continue
-        }
-
-        groups[currentGroup].push(char)
-    }
 
     return {
-        rawLine,
+        rawLine: l,
         checkSums,
         groups: groups.filter(({ length }) => length > 0)
     }
 })
 
 /** @type {HotSpringLine[]} */
-const oldHotSpringLines = file.split('\n').map(l => {
+const oldHotSpringsLines = file.split('\n').map(l => {
     const [rawLine, checkSumStr] = l.split(' ')
     const checkSums = checkSumStr.split(',').map(n => parseInt(n))
     const groups = [[]]
@@ -58,17 +45,18 @@ const oldHotSpringLines = file.split('\n').map(l => {
     }
 })
 
-const hotSpringLines = oldHotSpringLines
+const hotSpringsLines = newHotSpringsLines
 
 /** @typedef {import('./lib').Case} Case*/
 
 /** @type {Case[]} */
-const lines = hotSpringLines.map(({ groups, checkSums }) => ({ groups, checkSums, permutations: 1 }))
+const lines = hotSpringsLines.map(({ groups, checkSums }) => ({ groups, checkSums, permutations: 1 }))
 
 const results = []
 
 for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
   /** @type {Case[]} */
+  console.log(lineIndex + 1)
   const line = lines[lineIndex]
   
   
