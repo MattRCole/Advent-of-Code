@@ -31,6 +31,13 @@ const any = (arr, { item, predicate } = { item: undefined, predicate: undefined 
     return false
 }
 
+/** @type {<T extends unknown[][]>(...arrs: T) => { [K in keyof T]: T[K] extends (infer V)[] ? V : never }[]} */
+const zip = (...arrs) => {
+    const lengths = arrs.map(({ length }) => length)
+    const minLength = Math.min(...lengths)
+    return new Array(minLength).fill(undefined).map((_, index) => arrs.map((arr) => arr[index]))
+}
+
 module.exports = {
     sum,
     multiply,
@@ -40,6 +47,7 @@ module.exports = {
     reverse,
     splice,
     any,
+    zip,
 }
 
 
