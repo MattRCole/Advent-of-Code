@@ -28,4 +28,6 @@ then
     dayToRun="0${dayToRun#0}"
 fi
 
+sh -c "deno fmt --watch >/dev/null 2>&1" &
+
 deno run -A --watch "./${dayToRun}/script-${partToRun}.ts"
