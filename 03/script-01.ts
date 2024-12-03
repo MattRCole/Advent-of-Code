@@ -1,12 +1,10 @@
 import { multiply, sum } from "../util/array.ts";
 
-const parseInput = (file: string) => file.split("\n");
-
 const getValidMul = (input: string) => {
   const regex = /(mul\((?<p1>\d{1,3}),(?<p2>\d{1,3})\)).*/;
 
   let remainder = input;
-  let muls: number[][] = [];
+  const muls: number[][] = [];
 
   while (remainder.length) {
     const result = regex.exec(remainder);
