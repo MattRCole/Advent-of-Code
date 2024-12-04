@@ -1,6 +1,7 @@
 const fs = require("node:fs")
 
 const arr = require('../util/array')
+const { rejects } = require("node:assert")
 
 
 /** @type {(f: string) => string[][]} */
@@ -86,29 +87,38 @@ const testAlongColumn = (column, terrainMap) => {
   return true
 }
 
-/** @type {(terrainMap: string[]) => number} */
-const solveTerrainMap = terrainMap => {
+/** @type {(terrainMap: string[], stopAtFirstResult: boolean = true) => { rows: number[], columns: number[] }} */
+const solveTerrainMapWithInfo = (terrainMap, stopAtFirstResult = true) => {
   const { rows, columns } = getCheckSums(terrainMap)
   const prelimRows = getPreliminaryTestIndexes(rows)
   const prelimColumns = getPreliminaryTestIndexes(columns)
 
-  let response = 0
+  const reflectionRows = []
 
+  const reflectionColumns = []
   for (let rowIndex = 0; rowIndex < prelimRows.length; rowIndex++) {
     const row = prelimRows[rowIndex]
     if (testAlongRow(row, terrainMap) === false) continue
 
-    response += (row * 100)
+    reflectionRows.push(row)
+    if (stopAtFirstResult) return { rows: reflectionRows, columns: [] }
   }
 
   for (let columnIndex = 0; columnIndex < prelimColumns.length; columnIndex++) {
     const column = prelimColumns[columnIndex]
     if (testAlongColumn(column, terrainMap) === false) continue
 
-    response += column
+    reflectionColumns.push(column)
+    if (stopAtFirstResult) return { rows: reflectionRows, columns: reflectionColumns }
   }
 
-  return response
+  return { rows: reflectionRows, columns: reflectionColumns }
+}
+
+/** @type {(terrainMap: string[]) => number} */
+const solveTerrainMap = terrainMap => {
+  const { rows, columns } = solveTerrainMapWithInfo(terrainMap)
+  return (arr.sum(rows) * 100) + arr.sum(columns)
 }
 
 const main = () => {
@@ -128,6 +138,7 @@ module.exports = {
   getCheckSums,
   getPreliminaryTestIndexes,
   solveTerrainMap,
+  solveTerrainMapWithInfo,
   testAlongColumn,
   testAlongRow,
 }
