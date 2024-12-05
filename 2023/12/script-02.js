@@ -35,8 +35,10 @@ const baseCases = part2BaseCases
 
 let results = 0
 
+const zerosToPrepend = Math.ceil(Math.log10(baseCases.length)) + 1
+
 for (let baseCaseIndex = 0; baseCaseIndex < baseCases.length; baseCaseIndex++) {
-  console.log(baseCaseIndex + 1)
+  process.stdout.write('\r' + `${baseCaseIndex + 1}`.padStart(zerosToPrepend, '0') + `/${baseCases.length}`)
 
   const baseCase = baseCases[baseCaseIndex]
   
@@ -44,5 +46,7 @@ for (let baseCaseIndex = 0; baseCaseIndex < baseCases.length; baseCaseIndex++) {
   const lineResults = lib.solveBaseCase(baseCase)
   results += lineResults
 }
+
+console.log('')
 
 console.log('result: ', results)
