@@ -5,6 +5,9 @@ export const multiply = (arr: number[]) =>
 
 export const reverse = <T>(arr: T[]) => [...arr].reverse();
 
+export const getArray = <T = undefined>(length: number, fill?: T): T[] =>
+  new Array(length).fill(fill);
+
 export const lastIndex = <T>({ length }: T[]) => length - 1;
 
 export const last = <T>(arr: T[]) => arr.slice(-1)[0];
@@ -76,10 +79,22 @@ export const all = <T>(
   return true;
 };
 
-export const zip = <T>(...arrs: T[][]): T[][] => {
-  const lengths = arrs.map(({ length }) => length);
+export const zip = <T, R>(a: T[], b: R[]): ([T, R])[] => {
+  const lengths = [a, b].map(({ length }) => length);
   const minLength = Math.min(...lengths);
-  return new Array(minLength).fill(undefined).map((_, index) =>
-    arrs.map((arr) => arr[index])
+  return getArray(minLength).map((_, index) =>
+    [a, b].map((arr) => arr[index]) as [T, R]
   );
+};
+
+export const stableSort = <T>(
+  arr: T[],
+  comparator: (a: T, b: T) => number,
+): T[] => {
+  const zipped = zip(arr, getArray(arr.length).map((_, index) => index));
+
+  return zipped.toSorted(([a, aIndex], [b, bIndex]) => {
+    const compRes = comparator(a, b);
+    return compRes || aIndex - bIndex;
+  }).map(([item, _]) => item);
 };
