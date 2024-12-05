@@ -149,7 +149,6 @@ const runRockCycles = (count, rollingRocks, stoppingRocks, boundX, boundY) => {
     process.stdout.write(i.toString().padStart(numZeros, '0') + `/${count}, ${((i/count) * 100).toPrecision(2)}%          \n`)
     const newRockMap = cycleRocks(rockMap, stoppingRocks, boundX, boundY)
     const hash = hashRockMap(newRockMap)
-    if (rockMapsAreEqual(rockMap, newRockMap)) return newRockMap
     if (observedStates[hash] !== undefined) {
       if (!cycleObserved) {
         const predictedPeriod = i - observedStates[hash]
