@@ -17,12 +17,18 @@ fi
 filePath="./${dayToMake}/script-${partToMake}.ts"
 inputPath="./${dayToMake}/input.txt"
 examplePath="./${dayToMake}/example.txt"
+storyPath="./${dayToMake}/story.txt"
 
 mkdir -p "./$dayToMake"
 
 if [ ! -f "$inputPath" ]
 then
     touch "$inputPath"
+fi
+
+if [ ! -f "$storyPath" ]
+then
+    touch "$storyPath"
 fi
 
 if [ ! -f "$examplePath" ]
