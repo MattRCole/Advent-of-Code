@@ -1,4 +1,4 @@
-import { mapTrailHead, parseInput, Point } from "./script-01.ts";
+import { mapTrailHead, parseInput } from "./script-01.ts";
 
 if (import.meta.main) {
   const file = Deno.readTextFileSync("./10/input.txt");
