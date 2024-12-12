@@ -98,3 +98,6 @@ export const stableSort = <T>(
     return compRes || aIndex - bIndex;
   }).map(([item, _]) => item);
 };
+
+export const enumerate = <T>(arr: T[]): ([number, T])[] =>
+  zip(getArray(arr.length).map((_, idx) => idx), arr);
