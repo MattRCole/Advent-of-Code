@@ -7,7 +7,18 @@ import {
   reduceOverNeighbors,
 } from "../util/2dArray.ts";
 import { enumerate, last, sum } from "../util/array.ts";
+import {
+  CARDINAL_DIRECTIONS,
+  CardinalDirection,
+  Direction,
+  travelInDirection,
+} from "../util/grid.ts";
 import { keyToPoint, parseInput, PointKey, pointToKey } from "./script-01.ts";
+
+type PointDirectionKey = `${number}:${number}:${CardinalDirection}`;
+
+const pointAndDirectionToKey = (point: Point, direction: Direction) =>
+  `${point.x}:${point.y}:${direction}` as PointDirectionKey;
 
 type BorderMap = { [point: PointKey]: Point[] };
 
@@ -77,6 +88,37 @@ const getNumericKeys = (obj: { [key: number]: unknown }): number[] =>
   Object.keys(obj).map((k) => parseInt(k));
 
 const getEdgeCount = (borderMap: BorderMap) => {
+  // we want to walk every perimeter of the shape.
+  // The shape can have more than 1 perimeter
+  // How do we know if we've gotten them all?
+  // - Every outer adjacent space has been visited at least once
+  // - Every internal adjacent space has been visited at least once
+  const allInnerBorderSpaces = new Set(Object.keys(borderMap) as PointKey[]);
+  const allOuterBorderSpaces = new Set(
+    Object.values(borderMap).flat(1).map(pointToKey),
+  );
+  const visitedBoarderSpaces: Set<PointDirectionKey> = new Set();
+  const visitedInternalSpaces: Set<PointDirectionKey> = new Set();
+  const findFirstAdjacentUnvisitedWall = (
+    outerKey: PointKey,
+  ): CardinalDirection => {
+    const outerPoint = keyToPoint(outerKey);
+    for (const direction of CARDINAL_DIRECTIONS) {
+      const maybeValidInnerPointKey = pointToKey(
+        travelInDirection(outerPoint, direction),
+      );
+      if (
+        allInnerBorderSpaces.has(maybeValidInnerPointKey) &&
+        !visitedInternalSpaces.has(`${maybeValidInnerPointKey}:${direction}`)
+      ) return direction;
+    }
+    throw new Error(
+      `Trying to find a valid direction for ${outerKey}, but can't!!!! inner: ${
+        [...allInnerBorderSpaces.values()].join(" ")
+      }`,
+    );
+  };
+
   type SparseMap = { [key: number]: number[] };
   const yxSparseMap: SparseMap = {};
   const xySparseMap: SparseMap = {};
