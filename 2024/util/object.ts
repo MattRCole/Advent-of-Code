@@ -22,22 +22,31 @@ export const omit = <T extends object, O extends (keyof T)[]>(
     {} as Omit<T, O[number]>,
   );
 
-export const getAtPath = (obj: unknown, path: (string | number | symbol)[]): unknown => {
-    if (obj === undefined) return undefined
-    let currentVal: unknown = obj
-    for(const key of path) {
-        currentVal = (currentVal as { [key: string | number | symbol]: unknown })[key]
-        if (!currentVal) return currentVal
-    }
-    return currentVal
-}
+export const getAtPath = (
+  obj: unknown,
+  path: (string | number | symbol)[],
+): unknown => {
+  if (obj === undefined) return undefined;
+  let currentVal: unknown = obj;
+  for (const key of path) {
+    currentVal =
+      (currentVal as { [key: string | number | symbol]: unknown })[key];
+    if (!currentVal) return currentVal;
+  }
+  return currentVal;
+};
 
-export const getAtPathWithDefault = <T>(obj: unknown, path: (string | number | symbol)[], defaultValue: T): T => {
-    if (obj === undefined) return defaultValue
-    let currentVal: unknown = obj
-    for(const key of path) {
-        currentVal = (currentVal as { [key: string | number | symbol]: unknown })[key]
-        if (currentVal === undefined) return defaultValue
-    }
-    return currentVal as T
-}
+export const getAtPathWithDefault = <T>(
+  obj: unknown,
+  path: (string | number | symbol)[],
+  defaultValue: T,
+): T => {
+  if (obj === undefined) return defaultValue;
+  let currentVal: unknown = obj;
+  for (const key of path) {
+    currentVal =
+      (currentVal as { [key: string | number | symbol]: unknown })[key];
+    if (currentVal === undefined) return defaultValue;
+  }
+  return currentVal as T;
+};

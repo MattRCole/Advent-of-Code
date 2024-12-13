@@ -11,8 +11,11 @@ import {
   CARDINAL_DIRECTIONS,
   CardinalDirection,
   Direction,
+  getDirectionTraveled,
+  getIsCardinalDirection,
   travelInDirection,
 } from "../util/grid.ts";
+import { getAtPathWithDefault } from "../util/object.ts";
 import { keyToPoint, parseInput, PointKey, pointToKey } from "./script-01.ts";
 
 type PointDirectionKey = `${number}:${number}:${CardinalDirection}`;
@@ -21,6 +24,16 @@ const pointAndDirectionToKey = (point: Point, direction: Direction) =>
   `${point.x}:${point.y}:${direction}` as PointDirectionKey;
 
 type BorderMap = { [point: PointKey]: Point[] };
+
+const combineBorderMaps = (mapA: BorderMap, mapB: BorderMap): BorderMap =>
+  (Object.keys(mapB) as PointKey[])
+    .reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: [...(acc[key] || []), ...mapB[key]],
+      }),
+      mapA,
+    );
 
 const recursiveFlood = (
   map: string[][],
@@ -65,7 +78,11 @@ const recursiveFlood = (
       new Set(visitedPoints),
       currentChar,
     );
-    neighborBorders = { ...neighborBorders, ...neighborResults.borders };
+
+    neighborBorders = combineBorderMaps(
+      neighborBorders,
+      neighborResults.borders,
+    );
     visitedPoints = visitedPoints.union(neighborResults.visitedPoints);
     return [...acc, ...neighborResults.fill];
   });
@@ -73,7 +90,11 @@ const recursiveFlood = (
   return {
     fill,
     visitedPoints,
-    borders: { ...neighborBorders, [pointToKey(currentPoint)]: currentBorders },
+    borders: currentBorders.length
+      ? combineBorderMaps(neighborBorders, {
+        [pointToKey(currentPoint)]: currentBorders,
+      })
+      : neighborBorders,
   };
 };
 
@@ -87,106 +108,60 @@ const pointsAreEqual = (pointA: Point, pointB: Point) =>
 const getNumericKeys = (obj: { [key: number]: unknown }): number[] =>
   Object.keys(obj).map((k) => parseInt(k));
 
-const getEdgeCount = (borderMap: BorderMap) => {
-  // we want to walk every perimeter of the shape.
-  // The shape can have more than 1 perimeter
-  // How do we know if we've gotten them all?
-  // - Every outer adjacent space has been visited at least once
-  // - Every internal adjacent space has been visited at least once
-  const allInnerBorderSpaces = new Set(Object.keys(borderMap) as PointKey[]);
-  const allOuterBorderSpaces = new Set(
-    Object.values(borderMap).flat(1).map(pointToKey),
-  );
-  const visitedBoarderSpaces: Set<PointDirectionKey> = new Set();
-  const visitedInternalSpaces: Set<PointDirectionKey> = new Set();
-  const findFirstAdjacentUnvisitedWall = (
-    outerKey: PointKey,
-  ): CardinalDirection => {
-    const outerPoint = keyToPoint(outerKey);
-    for (const direction of CARDINAL_DIRECTIONS) {
-      const maybeValidInnerPointKey = pointToKey(
-        travelInDirection(outerPoint, direction),
+const getEdgeCount = (borderMap: BorderMap): number => {
+  type DirectedPoint = Point & { direction: CardinalDirection };
+  const wallMap: { [C in CardinalDirection]?: { [xOrY: number]: number[] } } =
+    {};
+  for (const pointKey of Object.keys(borderMap) as PointKey[]) {
+    const interiorPoint = keyToPoint(pointKey);
+    for (const outerPoint of borderMap[pointKey]) {
+      const direction = getDirectionTraveled(interiorPoint, outerPoint);
+      if (getIsCardinalDirection(direction) === false) {
+        throw new Error(
+          `Did not travel in cardinal direction! interiorPoint = ${
+            JSON.stringify(interiorPoint)
+          }, outerPoint: ${JSON.stringify(outerPoint)}`,
+        );
+      }
+
+      const isNorthSouth = [Direction.North, Direction.South].includes(
+        direction,
       );
-      if (
-        allInnerBorderSpaces.has(maybeValidInnerPointKey) &&
-        !visitedInternalSpaces.has(`${maybeValidInnerPointKey}:${direction}`)
-      ) return direction;
+      const firstKey = isNorthSouth ? interiorPoint.y : interiorPoint.x;
+      const secondKey = isNorthSouth ? interiorPoint.x : interiorPoint.y;
+      const existingSecondKeys = getAtPathWithDefault(wallMap, [
+        direction,
+        firstKey,
+      ], [] as number[]);
+      const numMap = {
+        ...(wallMap[direction] || {}),
+        [firstKey]: [...existingSecondKeys, secondKey],
+      };
+      wallMap[direction] = numMap;
     }
-    throw new Error(
-      `Trying to find a valid direction for ${outerKey}, but can't!!!! inner: ${
-        [...allInnerBorderSpaces.values()].join(" ")
-      }`,
-    );
-  };
-
-  type SparseMap = { [key: number]: number[] };
-  const yxSparseMap: SparseMap = {};
-  const xySparseMap: SparseMap = {};
-  for (const pointKey of Object.keys(borderMap)) {
-    const { x, y } = keyToPoint(pointKey as PointKey);
-    yxSparseMap[y] = [...(yxSparseMap[y] || []), x];
-    xySparseMap[x] = [...(xySparseMap[x] || []), y];
   }
-  for (const y of getNumericKeys(yxSparseMap)) {
-    const sortedX = yxSparseMap[y].toSorted((a, b) => a - b);
-    const { edgeCount } = sortedX.reduce(
-      (acc: { edgeCount: number; prevPoints: Point[] }, x, idx) => {
-        const currentPoint = { x, y };
-        if (acc.prevPoints.length === 0) {
-          if (idx + 1 === sortedX.length) {
-            return { ...acc, edgeCount: acc.edgeCount + 1 };
-          }
-
-          return { ...acc, prevPoints: [{ x, y }] };
-        }
-        if (x - 1 !== last(acc.prevPoints).x) {
-          let edgeCount = 0;
-          let currentBorders: Point[] = [];
-          for (const [index, point] of enumerate(acc.prevPoints)) {
-            const prevBoarders = currentBorders;
-            currentBorders = borderMap[pointToKey(point)].filter((
-              { y: borderY },
-            ) => borderY !== y);
-            if (index === 0) {
-              edgeCount += currentBorders.length;
-              continue;
-            }
-            if (prevBoarders.length === 2) {
-              // not a whole lot to do, we are or were on a peninsula, the number of edges is not going to go up
-              continue;
-            }
-            if (currentBorders.length === 2) {
-              // we know that we didn't used to have 2 boarders, so we've entered a peninsula. We know that we gained a new edge no matter what.
-              edgeCount++;
-              continue;
-            }
-            // this is where it gets interesting. Just cuz we have two boarders, they could be facing different directions
-            const [{ y: prevY }] = prevBoarders;
-            const [{ y: currentY }] = currentBorders;
-
-            // the way the edges are "facing" is different. so we know that its a new edge
-            if (prevY !== currentY) edgeCount++;
-          }
-          return {
-            edgeCount: acc.edgeCount + edgeCount,
-            prevPoints: [currentPoint],
-          };
-        }
-
-        return { ...acc, edgeCount: [...acc.prevPoints, currentPoint] };
-      },
-      { edgeCount: 0, prevPoints: [] } as {
-        edgeCount: number;
-        prevPoints: Point[];
-      },
-    );
+  const maybeConsecutiveNumberArrays = Object.values(wallMap).map((o) =>
+    Object.values(o)
+  ).flat(1);
+  let edgeCount = 0;
+  for (const maybeConsecutiveNumbers of maybeConsecutiveNumberArrays) {
+    const sorted = maybeConsecutiveNumbers.toSorted((a, b) => a - b);
+    sorted.forEach((num, idx) => {
+      if (idx === 0) {
+        edgeCount++;
+        return;
+      }
+      if (num - 1 !== sorted[idx - 1]) edgeCount++;
+    });
   }
+  return edgeCount;
 };
 
 const handleFloodFill = (input: string[][]) => {
   const inputSize = getSize(input);
   const hasBeenVisited = get2DArray(inputSize, false);
-  const mapOfFills = {} as MapOfFills;
+  let runningTotal = 0;
+  // const mapOfFills = {} as MapOfFills;
 
   visitMap(input, (key, point) => {
     if (at(hasBeenVisited, point)) return;
@@ -197,26 +172,21 @@ const handleFloodFill = (input: string[][]) => {
       new Set(),
       key,
     );
-    mapOfFills[key] = (mapOfFills[key] || 0) +
-      (fill.length * Object.values(borders).flat(1).length);
+    const edgeCount = getEdgeCount(borders);
+    runningTotal += fill.length * edgeCount;
+    // mapOfFills[key] = (mapOfFills[key] || 0) +
+    //   (fill.length * Object.values(borders).flat(1).length);
     for (const pointKey of visitedPoints.values()) {
       const { x, y } = keyToPoint(pointKey);
       hasBeenVisited[y][x] = true;
     }
   });
-  return mapOfFills;
+  return runningTotal;
 };
 
 if (import.meta.main) {
   const file = Deno.readTextFileSync("./12/input.txt");
   const input = parseInput(file);
   const res = handleFloodFill(input);
-  console.log({ res: sum(Object.values(res)) });
-  // const { visitedPoints, fill, borders } = recursiveFlood(
-  //   input,
-  //   { x: 0, y: 0 },
-  //   new Set(),
-  //   input[0][0],
-  // );
-  // console.log({ fill, visitedPoints: [...visitedPoints.values()], borders });
+  console.log({ res: res });
 }
