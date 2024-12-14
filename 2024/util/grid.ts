@@ -1,4 +1,4 @@
-import { Point } from "./2dArray.ts";
+import { Point } from "./2d-point.ts";
 
 export enum Direction {
   North = "North",

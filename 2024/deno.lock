@@ -27,6 +27,10 @@
       "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
     }
   },
+  "remote": {
+    "https://deno.land/x/bigdenary@1.0.0/mod.ts": "78b4ca7df3083006910475c4dda11ddea239974cd8436605debdaf3a42d84945",
+    "https://deno.land/x/bigdenary@1.0.0/util.ts": "2442c167bd53a815f14471659e3e7bb6ffda8b865b49eabe66dd93c412193763"
+  },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",

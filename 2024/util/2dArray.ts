@@ -1,6 +1,8 @@
 import { getArray } from "./array.ts";
+import { Point as Point2D } from "./2d-point.ts";
 
-export type Point = { x: number; y: number };
+// backwards compatibility
+export type Point = Point2D;
 
 export const visitNeighbors = <T>(
   map: T[][],
