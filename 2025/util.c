@@ -1,4 +1,5 @@
 #include "./util.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -193,4 +194,14 @@ size_t isolatePowerRange(size_t base, size_t maxBasePower, size_t minBasePower, 
 
 
     return (number % powLL(base, maxBasePower + 1)) / powLL(base, minBasePower);
+}
+
+uint8_t getNumericFromAscii(char character) {
+    assert(character >= 0x30 && character <= 0x39, "Character '%c' with number of %02u (0x%02x)", character, (uint8_t)character, (uint8_t)character);
+
+    return (uint8_t)(character - 0x30);
+}
+
+bool isNumeric(char character) {
+    return character >= 0x30 && character <= 0x39;
 }
