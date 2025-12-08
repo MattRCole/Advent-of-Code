@@ -163,3 +163,34 @@ int64_t getPrimeFactors(size_t number, size_t *resultsOut, size_t *resultCountsO
     }
     return resultsIndex;
 };
+
+size_t powLL(size_t base, size_t power) {
+    size_t result = 1;
+    for (size_t i = 0; i < power; i++) {
+        result *= base;
+    }
+    return result;
+}
+
+size_t powTenLL(size_t power) {
+    size_t result = 1;
+    for (size_t i = 0; i < power; i++) {
+        result *= 10;
+    }
+    return result;
+}
+
+size_t isolatePowerRange10(size_t maxPowerOfTen, size_t minPowerOfTen, size_t number) {
+    assert(maxPowerOfTen >= minPowerOfTen, "Got max and min mixed up! Max: %zu, min: %zu\n", maxPowerOfTen, minPowerOfTen);
+
+    return (number % powTenLL(maxPowerOfTen + 1)) / powTenLL(minPowerOfTen);
+}
+
+
+size_t isolatePowerRange(size_t base, size_t maxBasePower, size_t minBasePower, size_t number) {
+    assert(maxBasePower >= minBasePower, "Got max and min mixed up! Max power: %zu, min power: %zu\n", maxBasePower, minBasePower);
+    assert(base > 0, "Base is 0! That won't work!!!");
+
+
+    return (number % powLL(base, maxBasePower + 1)) / powLL(base, minBasePower);
+}
