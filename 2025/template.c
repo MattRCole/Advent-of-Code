@@ -15,6 +15,7 @@ int main() {
     while((lineLen = getline(&line, &lineCapp, input)) > 0) {
         lineNo++;
         printf("%03zu (count: %05zd): %s", lineNo, lineLen, line);
+        if (line[lineLen - 1] != '\n') printf("\n");
     }
 
     return 0;

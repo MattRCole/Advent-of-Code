@@ -32,6 +32,9 @@
     (dynamic_arr).length += 1; \
 } while (0)
 
+#define dynamic_first(dynamic_arr) (dynamic_arr).data[0]
+#define dynamic_last(dynamic_arr) (dynamic_arr).data[(dynamic_arr).length - 1]
+
 #define remove_dynamic_item(dynamic_arr, at_index) do { \
     size_t _idx_ = (size_t)((at_index) < 0 ? (dynamic_arr).length - (at_index) : at_index); \
     assert(_idx_ < (dynamic_arr).length && _idx_ >= 0, "Cannot remove item at %ld as it's greater than %zu\n", (ssize_t)(at_index), (dynamic_arr).length); \
