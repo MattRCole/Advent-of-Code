@@ -26,4 +26,4 @@ fi
 
 dayPart="./$dayToRun/part-$partToRun"
 
-nomon.sh -w "." -e c -e h -e txt -c -- 'clang "'"$dayPart"'.c" "./util.c" -o '"$dayPart"' && '"$dayPart"
+nomon.sh -w "." -e c -e h -e txt -c -- 'clang "'"$dayPart"'.c" "./util.c" -g -glldb -o '"$dayPart"' && '"$dayPart"
