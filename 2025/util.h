@@ -43,6 +43,8 @@
     memmove((dynamic_arr).data + _idx_, (dynamic_arr).data + _idx_ + 1, ((dynamic_arr).length - _idx_) * (dynamic_arr).dataSize); \
 } while (0)
 
+#define dynamic_erase_all(dynamic_arr) (dynamic_arr).length = 0
+
 #define add_dynamic_item_at(dynamic_arr, item, at_index) do  { \
     size_t _idx__ = (size_t)((at_index) < 0 ? (dynamic_arr).length - (at_index) : (at_index)); \
     assert(_idx__ >= 0 && _idx__ < (dynamic_arr).length, "Cannot insert item at %zu as it is >= %zu", _idx__, (dynamic_arr).length); \
