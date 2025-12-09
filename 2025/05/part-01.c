@@ -31,23 +31,6 @@ RangeLinkedListT *newRange(size_t start, size_t end) {
 //     } \
 // } while (0)
 
-// dynamic_array(TestingArray, RangeLinkedListT);
-// int main() {
-
-//     TestingArray myArr = new_dynamic_arr(5, 0, RangeLinkedListT, NULL);
-//     add_dynamic_item(myArr, ((RangeLinkedListT){.start=5, .end=10, .next=NULL}));
-//     add_dynamic_item_at(myArr, ((RangeLinkedListT){.start=1, .end=4, .next=NULL}), 0);
-//     add_dynamic_item_at(myArr, ((RangeLinkedListT){.start=0, .end=0, .next=NULL}), 0);
-//     add_dynamic_item(myArr, ((RangeLinkedListT){.start=12, .end=15, .next=NULL}));
-//     add_dynamic_item(myArr, ((RangeLinkedListT){.start=17, .end=19, .next=NULL}));
-//     remove_dynamic_item(myArr, 3);
-//     add_dynamic_item(myArr, ((RangeLinkedListT){.start=21, .end=23, .next=NULL}));
-//     printf("Length: %zu, size: %zu\n", myArr.length, myArr.size);
-//     for(size_t i = 0; i < myArr.length; i++) {
-//         printf("#%zu: %zu-%zu\n", i, myArr.data[i].start, myArr.data[i].end);
-//     }
-// }
-
 // dynamic_array(RangeLinkedListPointerArr, RangeLinkedListT *);
 
 
