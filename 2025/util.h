@@ -43,6 +43,9 @@
     memmove((dynamic_arr).data + _idx_, (dynamic_arr).data + _idx_ + 1, ((dynamic_arr).length - _idx_) * (dynamic_arr).dataSize); \
 } while (0)
 
+// This is unsafe. Always assert that length > 0 before use
+#define dynamic_pop(dynamic_arr) (dynamic_arr).data[(dynamic_arr).length--]
+
 #define dynamic_erase_all(dynamic_arr) (dynamic_arr).length = 0
 
 #define add_dynamic_item_at(dynamic_arr, item, at_index) do  { \
