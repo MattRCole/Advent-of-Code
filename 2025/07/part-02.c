@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include "../util.h"
 
-// #define INPUT_PATH "./07/input.txt"
-#define INPUT_PATH "./07/example.txt"
+#define INPUT_PATH "./07/input.txt"
+// #define INPUT_PATH "./07/example.txt"
 
 dynamic_array(FileLines, char *);
 
@@ -12,7 +12,8 @@ typedef struct {
     size_t colIdx;
 } StackFrame;
 
-dynamic_array(StackFrames, StackFrame);
+dynamic_array(NumberLines, size_t *);
+
 
 int main() {
     FileLines lines = new_dynamic_arr(0, 0, char *, NULL);
@@ -20,77 +21,104 @@ int main() {
     char *line = NULL;
     size_t lineCapp = 0;
     ssize_t rawLineLen;
-    
+
     while((rawLineLen = getline(&line, &lineCapp, input)) > 0) {
         add_dynamic_item(lines, calloc(rawLineLen + 1, sizeof(char)));
         strncpy(dynamic_last(lines), line, line[rawLineLen - 1] == '\n' ? rawLineLen - 1 : rawLineLen);
+        // printf("%03zu (count: %014zd): %s", lines.length, rawLineLen, line);
+        // if (line[rawLineLen - 1] != '\n') printf("\n");
+        // printf("Copied line (count: %05zd): '%s'\n", strlen(dynamic_last(lines)), dynamic_last(lines));
+    }
+    assert(lines.length > 0, "Somehow didn't read lines...");
+    size_t lineLen = strlen(dynamic_first(lines));
+    NumberLines numberLines = new_dynamic_arr(lines.length, 0, size_t *, NULL);
+    FileLines ogLines = new_dynamic_arr(lines.length, 0, char *, NULL);
+    for(size_t i = 0; i < lines.length; i++) {
+        add_dynamic_item(ogLines, calloc(lineLen + 1, sizeof(char)));
+        strcpy(dynamic_last(ogLines), lines.data[i]);
     }
 
-    StackFrames frames = new_dynamic_arr(0, 0, StackFrame, NULL);
-    for(size_t i = 0; i < strlen(dynamic_first(lines)); i++) {
-        if (dynamic_first(lines)[i] == 'S') {
-            add_dynamic_item(frames, ((StackFrame){ .lineIdx=1, .colIdx=i}));
-            break;
-        }
-    }
-    assert(frames.length > 0, "Could not find starting position!!!");
-    // printf("Initial colIdx: %zu\n", frames.data[0].colIdx);
-    const size_t lineLen = strlen(dynamic_first(lines));
-
-    // recursion is for noobs.
     size_t timelineTotal = 0;
-    // size_t maxFrames, minFrames;
-    // maxFrames = minFrames = 0;
-    while(frames.length) {
-        printf("\rrunning total: %010zu, frames: %05zu", timelineTotal, frames.length);
-        // printf("\n%zu frames left...\n", frames.length);
-        // if (frames.length > maxFrames) {
-        //     if (maxFrames != 0) {
-        //         printf("prev minFrames: %zu, new maxFrames: %zu\n", minFrames, maxFrames);
-        //     }
-        //     maxFrames = frames.length;
-        // }
-        // minFrames = min(minFrames, frames.length);
-        StackFrame frame = {0};
-        frame.lineIdx = dynamic_last(frames).lineIdx;
-        frame.colIdx = dynamic_last(frames).colIdx;
-        dynamic_pop(frames);
-        // printf("Frames left: %zu\n", frames.length);
-        // printf("New frame: Starting line: %zu, starting col: %zu\n", frame.lineIdx, frame.colIdx);
-        // for(size_t i = 0; i < frame.lineIdx; i++) printf("%03zu %s\n", i, lines.data[i]);
-        while (frame.lineIdx < lines.length) {
-            char *currLine = lines.data[frame.lineIdx];
-            // printf("%03zu %s\n", frame.lineIdx, currLine);
-            // printf("    %*c\n", (int)frame.colIdx + 1, '^');
-            if (currLine[frame.colIdx] == '^') {
-                // printf("splitting...\n");
-                if (frame.colIdx + 1 == lineLen) {
-                    // dead-end timeline
-                    // printf("OOB right\n");
-                    timelineTotal++;
-                } else {
-                    add_dynamic_item(frames, ((StackFrame){ .lineIdx=frame.lineIdx + 1, .colIdx=frame.colIdx+1}));
-                    // printf("Adding Right, lineIdx: %zu, colIdx: %zu, lineCount: %zu\n", dynamic_last(frames).lineIdx, dynamic_last(frames).colIdx, lines.length);
-                }
 
-                if ((ssize_t)(frame.colIdx) - 1 < 0) {
-                    // current timeline is a dead-end
-                    // we'll add this timeline at the end of the loop
-                    // printf("OOB left\n");
+    for(size_t lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        if (lineIdx == 0) {
+            add_dynamic_item(numberLines, calloc(lineLen, sizeof(size_t)));
+            for(size_t i = 0; i < strlen(lines.data[lineIdx]); i++) {
+                if (lines.data[lineIdx][i] == 'S') {
+                    numberLines.data[lineIdx][i] = 1;
+                    lines.data[lineIdx][i] = '|';
                     break;
-                } else {
-                    size_t oldIdx = frame.colIdx;
-                    frame.colIdx--;
-                    // printf("Moving left from %zu to %zu...\n", oldIdx, frame.colIdx);
                 }
             }
-            frame.lineIdx++;
-            // printf("Continuing. lineIdx: %zu\n", frame.lineIdx);
         }
-        timelineTotal++;
+        if (lineIdx + 1 == lines.length) {
+            // add up totals...
+            size_t *currNumberLine = dynamic_last(numberLines);
+            for(size_t i = 0; i < lineLen; i++) {
+                timelineTotal += currNumberLine[i];
+            }
+            // fail("TODO: Add up totals\n");
+            continue;
+        }
+        // add the next line since this isn't the last line.
+
+        char *currLine = lines.data[lineIdx];
+        char *nextLine = lines.data[lineIdx + 1];
+        size_t *currNumberLine = dynamic_last(numberLines);
+        add_dynamic_item(numberLines, calloc(lineLen, sizeof(size_t)));
+        size_t *nextNumberLine = dynamic_last(numberLines);
+
+        for(ssize_t i = 0; i < strlen(currLine); i++) {
+            if (currLine[i] != '|') continue;
+
+            if (nextLine[i] != '^') {
+                nextLine[i] = '|';
+                // propagate number...
+                nextNumberLine[i] += currNumberLine[i];
+                continue;
+            }
+            // splitTotal += 1;
+            if (i - 1 >= 0) {
+                nextLine[i - 1] = '|';
+                // if (nextNumberLine[i - 1] <= 1) nextNumberLine[i - 1] += currNumberLine[i];
+                // else nextNumberLine[i - 1] *= currNumberLine[i];
+                nextNumberLine[i - 1] += currNumberLine[i];
+            } else {
+                // Left OOB
+                printf("LEFT OOB line: %zu\n", lineIdx);
+                timelineTotal += currNumberLine[i];
+            }
+
+            if (i + 1 < lineLen) {
+                nextLine[i + 1] = '|';
+                // if (nextNumberLine[i + 1] <= 1) nextNumberLine[i + 1] += currNumberLine[i];
+                // else nextNumberLine[i + 1] *= currNumberLine[i];
+                nextNumberLine[i + 1] += currNumberLine[i];
+            } else {
+                printf("RIGHT OOB line: %zu\n", lineIdx);
+                timelineTotal += currNumberLine[i];
+            }
+        }
     }
+    for(size_t i = 0; i < lines.length; i++) {
+        printf("%s\n", lines.data[i]);
+    }
+    printf("\n");
 
+    // for(size_t i = 0; i < numberLines.length; i++) {
+    //     for(size_t j = 0; j < lineLen; j++) {
+    //         printf("%c  ", ogLines.data[i][j]);
+    //     }
+    //     printf("\n");
 
-    printf("\nTime lines: %zu\n", timelineTotal);
+    //     for(size_t j = 0; j < lineLen; j++) {
+    //         if (numberLines.data[i][j]) printf("%02zu ", numberLines.data[i][j]);
+    //         else printf("   ");
+    //     }
+    //     printf("\n");
+    // }
+
+    printf("timeline total: %zu\n", timelineTotal);
+
     return 0;
 }
