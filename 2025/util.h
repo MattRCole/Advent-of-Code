@@ -63,6 +63,8 @@
 } while (0)
 
 #define new_dynamic_arr(initial_size, initial_length, data_type, initial_pointer) { .size=(initial_size), .length=(initial_length), .dataSize=sizeof(data_type), .data=(initial_pointer) }
+#define empty_dynamic_arr(data_type) new_dynamic_arr(0, 0, data_type, NULL);
+#define d_at(dynamic_arr, idx) ((dynamic_arr).data[((ssize_t)(idx) < 0 ? (dynamic_arr).length + ((size_t)(idx)) : (idx))])
 
 #define dynamic_bin_search(dynamic_arr, comparison_statement_eq, comparision_statement_lt, was_found, final_idx) do {\
     assert((dynamic_arr).length > 0, "Cannot search %s since it has a length of 0\n", #dynamic_arr); \
