@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include "../util.h"
 
-#define INPUT_PATH "./07/input.txt"
-// #define INPUT_PATH "./07/example.txt"
+// #define INPUT_PATH "./07/input.txt"
+#define INPUT_PATH "./07/example.txt"
 
 dynamic_array(FileLines, char *);
 

@@ -47,6 +47,7 @@
 #define dynamic_pop(dynamic_arr) (dynamic_arr).data[(dynamic_arr).length--]
 
 #define dynamic_erase_all(dynamic_arr) (dynamic_arr).length = 0
+#define dynamic_free_all(dynamic_arr) do { free((dynamic_arr).data); (dynamic_arr).data = NULL; (dynamic_arr).size = 0; (dynamic_arr).length = 0; } while (0)
 
 #define add_dynamic_item_at(dynamic_arr, item, at_index) do  { \
     size_t _idx__ = (size_t)((at_index) < 0 ? (dynamic_arr).length - (at_index) : (at_index)); \
@@ -62,6 +63,19 @@
 } while (0)
 
 #define new_dynamic_arr(initial_size, initial_length, data_type, initial_pointer) { .size=(initial_size), .length=(initial_length), .dataSize=sizeof(data_type), .data=(initial_pointer) }
+
+#define dynamic_bin_search(dynamic_arr, comparison_statement_eq, comparision_statement_lt, was_found, final_idx) do {\
+    assert((dynamic_arr).length > 0, "Cannot search %s since it has a length of 0\n", #dynamic_arr); \
+    size_t _left__, _right__; _left__ = 0; _right__ = (dynamic_arr).length; \
+    (was_found) = false; \
+    while (_left__ < _right__) { \
+        (final_idx) = _left__ + ((_right__ - _left__) / 2); \
+        if (comparison_statement_eq) { \
+            (was_found) = true; \
+            break; \
+        } else if (comparision_statement_lt) { _right__ = (final_idx); } else { _left__ = (final_idx) + 1; } \
+    } \
+} while (0)
 
 int64_t getPrimeFactors(size_t number, size_t *resultsOut, size_t *resultCountsOut, size_t maxResults);
 size_t powLL(size_t base, size_t power);
