@@ -6,8 +6,8 @@
 
 #define fail(...) do { printf(__VA_ARGS__); exit(1); } while (0)
 #define assert(condition, ...) do { if (!(condition)) fail(__VA_ARGS__); } while (0)
-#define max(a, b) (a) > (b) ? (a) : (b)
-#define min(a, b) (a) > (b) ? (b) : (a)
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) > (b) ? (b) : (a))
 #define two_d_index(col_len, x, y) (((y) * (col_len)) + (x))
 #define clamp(minimum, target, maximum) max((minimum), min((target), (maximum)))
 
@@ -20,7 +20,7 @@
         break; \
     } \
     void *newData = malloc((dynamic_arr).dataSize * (dynamic_arr).size * 2); \
-    memcpy(newData, (dynamic_arr).data, (dynamic_arr).dataSize * (dynamic_arr).size); \
+    memcpy(newData, (dynamic_arr).data, (dynamic_arr).dataSize * (dynamic_arr).length); \
     free((dynamic_arr).data); \
     (dynamic_arr).data = newData; \
     (dynamic_arr).size = (dynamic_arr).size * 2; \
@@ -51,7 +51,7 @@
 
 #define add_dynamic_item_at(dynamic_arr, item, at_index) do  { \
     size_t _idx__ = (size_t)((at_index) < 0 ? (dynamic_arr).length - (at_index) : (at_index)); \
-    assert(_idx__ >= 0 && _idx__ < (dynamic_arr).length, "Cannot insert item at %zu as it is >= %zu", _idx__, (dynamic_arr).length); \
+    assert(_idx__ >= 0 && _idx__ <= (dynamic_arr).length, "Cannot insert item at %zu as it is > %zu", _idx__, (dynamic_arr).length); \
     if (_idx__ == ((dynamic_arr).length)) { \
         add_dynamic_item((dynamic_arr), (item)); \
         break; \
@@ -62,8 +62,31 @@
     (dynamic_arr).length++; \
 } while (0)
 
+#define dynamic_copy(src_arr, dest_arr) do { \
+    if ((src_arr).length == 0) { \
+        dest_arr.length = 0; \
+        break; \
+    } \
+    if ((dest_arr).size < (src_arr).length) { \
+        if ((dest_arr).data) { free((dest_arr).data); (dest_arr).data = NULL; } \
+        (dest_arr).size = (src_arr).size; \
+        _expand_array(dest_arr); \
+    } \
+    memcpy((dest_arr).data, (src_arr).data, (src_arr).length * (src_arr).dataSize); \
+} while (0);
+
+#define dynamic_extend(dest_arr, src_arr) do {\
+    if ((src_arr).length == 0) break; \
+    if ((dest_arr).size <  (dest_arr).length + (src_arr).length) { \
+        (dest_arr).size = (((dest_arr).length + (src_arr).length) / 2) + 1; \
+        _expand_array(dest_arr); \
+    } \
+    memcpy((dest_arr).data + (dest_arr).length, (src_arr).data, (src_arr).length * (src_arr).dataSize); \
+    (dest_arr).length = (dest_arr).length + (src_arr).length; \
+} while (0)
+
 #define new_dynamic_arr(initial_size, initial_length, data_type, initial_pointer) { .size=(initial_size), .length=(initial_length), .dataSize=sizeof(data_type), .data=(initial_pointer) }
-#define empty_dynamic_arr(data_type) new_dynamic_arr(0, 0, data_type, NULL);
+#define empty_dynamic_arr(data_type) new_dynamic_arr(0, 0, data_type, NULL)
 #define d_at(dynamic_arr, idx) ((dynamic_arr).data[((ssize_t)(idx) < 0 ? (dynamic_arr).length + ((size_t)(idx)) : (idx))])
 
 #define dynamic_bin_search(dynamic_arr, comparison_statement_eq, comparision_statement_lt, was_found, final_idx) do {\
@@ -78,6 +101,12 @@
         } else if (comparision_statement_lt) { _right__ = (final_idx); } else { _left__ = (final_idx) + 1; } \
     } \
 } while (0)
+
+dynamic_array(String, char);
+
+#define to_string(chars) (String)new_dynamic_arr(strlen(chars), strlen(chars), char, chars)
+
+#define number_to_ascii(num) (char)(((num) % 10) + 0x30)
 
 int64_t getPrimeFactors(size_t number, size_t *resultsOut, size_t *resultCountsOut, size_t maxResults);
 size_t powLL(size_t base, size_t power);
